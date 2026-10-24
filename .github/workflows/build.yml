@@ -1,0 +1,82 @@
+name: build
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+
+  workflow_dispatch:
+    inputs:
+      allow_size_change:
+        description: "Publish even if a list size changed by more than the configured limit"
+        type: boolean
+        default: false
+
+  pull_request:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-${{ github.ref }}
+
+env:
+  MIHOMO_VERSION: v1.19.33
+  MIHOMO_SHA256: 132f6f3edf9a65e62f04853aed3358472e0b2b7666daa8419edfa2ddf5bb6323
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: 25
+
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+
+      - name: Download mihomo
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/mihomo.gz" "https://github.com/MetaCubeX/mihomo/releases/download/$MIHOMO_VERSION/mihomo-linux-amd64-$MIHOMO_VERSION.gz"
+          echo "$MIHOMO_SHA256  $RUNNER_TEMP/mihomo.gz" | sha256sum -c -
+          gunzip "$RUNNER_TEMP/mihomo.gz"
+          chmod +x "$RUNNER_TEMP/mihomo"
+
+      - name: Fetch last published version
+        run: |
+          echo "OUT=$RUNNER_TEMP/out" >> "$GITHUB_ENV"
+          echo "PREV=$RUNNER_TEMP/prev" >> "$GITHUB_ENV"
+          mkdir -p "$RUNNER_TEMP/prev"
+          if git fetch --depth=1 origin release; then git archive FETCH_HEAD | tar -x -C "$RUNNER_TEMP/prev"; fi
+
+      - name: Test and build
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          ALLOW_SIZE_CHANGE: ${{ inputs.allow_size_change }}
+        run: |
+          args="--out $OUT --prev $PREV --mihomo $RUNNER_TEMP/mihomo"
+          if [ "$ALLOW_SIZE_CHANGE" = true ]; then args="$args --allow-size-change"; fi
+          ./gradlew test run --args="$args"
+          { echo '```json'; cat "$OUT/meta.json"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publish to release branch
+        if: github.event_name != 'pull_request'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          changed=false
+          for f in ru-whitelist-domain.txt ru-whitelist-domain.mrs ru-whitelist-ipcidr.txt ru-whitelist-ipcidr.mrs LICENSE-upstream; do
+            cmp -s "$OUT/$f" "$PREV/$f" || changed=true
+          done
+          if [ "$changed" = false ]; then
+            echo "Nothing changed since the last release, not publishing" | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          cd "$OUT"
+          git init -q -b release
+          git add .
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -qm "Build $(date -u +%F)"
+          git push -f "https://x-access-token:$GITHUB_TOKEN@github.com/$GITHUB_REPOSITORY.git" release
+          echo "Published to release" | tee -a "$GITHUB_STEP_SUMMARY"
