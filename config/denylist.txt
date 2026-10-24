@@ -1,0 +1,85 @@
+# Domains that must never go DIRECT. If upstream ships one of them, the build fails instead of dropping it silently.
+# Syntax as in mihomo: `example.com` matches only itself, `+.example.com` also matches every subdomain.
+
+# Bare TLDs
+com
+net
+org
+info
+biz
+io
+me
+app
+dev
+ru
+su
+xn--p1ai
+online
+site
+tech
+st
+
+# Google
++.google.com
++.google.ru
++.googleapis.com
++.googleusercontent.com
++.googlevideo.com
++.gstatic.com
++.gvt1.com
++.gvt2.com
++.ggpht.com
++.youtube.com
++.ytimg.com
++.1e100.net
+
+# Cloudflare
++.cloudflare.com
++.cloudflare.net
++.cloudflare-dns.com
++.workers.dev
++.pages.dev
++.r2.dev
+
+# Akamai
++.akamai.net
++.akamaiedge.net
++.akamaihd.net
++.akamaized.net
++.akamaitechnologies.com
++.edgekey.net
++.edgesuite.net
+
+# Amazon
++.amazonaws.com
++.cloudfront.net
++.awsglobalaccelerator.com
+
+# Fastly
++.fastly.net
++.fastlylb.net
++.fastly-edge.com
+
+# Microsoft
++.azureedge.net
++.azurefd.net
++.azurewebsites.net
++.windows.net
++.trafficmanager.net
+
+# Other CDNs and clouds
++.cdn77.org
++.cdn77.net
++.b-cdn.net
++.bunny.net
++.edgecastcdn.net
++.llnwd.net
++.stackpathdns.com
++.jsdelivr.net
++.vercel.app
++.netlify.app
++.herokuapp.com
++.digitaloceanspaces.com
++.oraclecloud.com
++.hetzner.com
++.ovh.net
