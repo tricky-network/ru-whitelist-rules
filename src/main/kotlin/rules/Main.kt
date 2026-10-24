@@ -33,6 +33,7 @@ private const val WHITELIST_REPO = "hxehex/russia-mobile-internet-whitelist"
 private const val MAX_LOGGED_INVALID = 20
 
 private val SHA_REGEX = Regex("[0-9a-f]{40}")
+private val VERSION_REGEX = Regex("""\bv\d+\.\d+\.\d+\S*""")
 
 fun main(args: Array<String>) {
     BuildCommand().main(args)
@@ -134,7 +135,9 @@ private fun fetchText(url: String, accept: String? = null): String {
 private fun convertRuleSets(mihomo: Path, out: Path): String {
     convertRuleSet(mihomo, "domain", out / DOMAIN_TXT, out / DOMAIN_MRS)
     convertRuleSet(mihomo, "ipcidr", out / IPCIDR_TXT, out / IPCIDR_MRS)
-    return runCommand("$mihomo", "-v").lines().first().trim()
+
+    val output = runCommand("$mihomo", "-v")
+    return requireNotNull(VERSION_REGEX.find(output)?.value) { "No version in mihomo -v output: $output" }
 }
 
 private fun convertRuleSet(mihomo: Path, behavior: String, source: Path, target: Path) {
