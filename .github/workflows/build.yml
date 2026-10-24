@@ -10,6 +10,10 @@ on:
         description: "Publish even if a list size changed by more than the configured limit"
         type: boolean
         default: false
+      force_publish:
+        description: "Publish even if the rule-sets did not change, e.g. to refresh meta.json"
+        type: boolean
+        default: false
 
   pull_request:
 
@@ -67,8 +71,10 @@ jobs:
         if: github.event_name != 'pull_request'
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          FORCE_PUBLISH: ${{ inputs.force_publish }}
         run: |
           changed=false
+          if [ "$FORCE_PUBLISH" = true ]; then changed=true; fi
           for f in ru-whitelist-domain.txt ru-whitelist-domain.mrs ru-whitelist-ipcidr.txt ru-whitelist-ipcidr.mrs LICENSE-upstream; do
             cmp -s "$OUT/$f" "$PREV/$f" || changed=true
           done
