@@ -4,14 +4,6 @@ Rule-set'ы для [mihomo](https://github.com/MetaCubeX/mihomo) с домена
 
 Сборка запускается раз в сутки. Результат публикуется в ветку [`release`](../../tree/release):
 
-| Файл | Что внутри |
-|---|---|
-| `ru-whitelist-domain.mrs` | домены, `behavior: domain` |
-| `ru-whitelist-ipcidr.mrs` | IPv4-подсети, `behavior: ipcidr` |
-| `*.txt` | текстовые исходники тех же списков, для отладки |
-| `meta.json` | SHA коммитов апстримов, версия mihomo, счётчики, время сборки, отчёт по подсетям |
-| `LICENSE-upstream` | лицензия апстрима списков |
-
 ## Подключение
 
 ```yaml
