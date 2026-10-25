@@ -21,6 +21,8 @@ import kotlin.system.exitProcess
 
 private const val DOMAIN_MRS = "ru-whitelist-domain.mrs"
 private const val DOMAIN_TXT = "ru-whitelist-domain.txt"
+private const val EXTRA_CIDR_BRANCH = "main"
+private const val EXTRA_CIDR_REPO = "escapingworm/russia-whitelist"
 private const val GEOIP_BRANCH = "meta"
 private const val GEOIP_PATH = "geo/geoip/ru.list"
 private const val GEOIP_REPO = "MetaCubeX/meta-rules-dat"
@@ -64,11 +66,13 @@ class BuildCommand : CoreCliktCommand(name = "ru-whitelist-rules") {
         val denylist = Denylist(Path("config/denylist.txt").readLines())
 
         val whitelistSha = fetchHeadSha(WHITELIST_REPO, WHITELIST_BRANCH)
+        val extraCidrSha = fetchHeadSha(EXTRA_CIDR_REPO, EXTRA_CIDR_BRANCH)
         val geoipSha = fetchHeadSha(GEOIP_REPO, GEOIP_BRANCH)
-        echo("$WHITELIST_REPO@$whitelistSha\n$GEOIP_REPO@$geoipSha")
+        echo("$WHITELIST_REPO@$whitelistSha\n$EXTRA_CIDR_REPO@$extraCidrSha\n$GEOIP_REPO@$geoipSha")
 
         val inputs = Inputs(
-            cidrs = fetchRaw(WHITELIST_REPO, whitelistSha, "cidrwhitelist.txt").lines(),
+            cidrs = fetchRaw(WHITELIST_REPO, whitelistSha, "cidrwhitelist.txt").lines() +
+                fetchRaw(EXTRA_CIDR_REPO, extraCidrSha, "ru-whitelist-cidr.txt").lines(),
             domains = fetchRaw(WHITELIST_REPO, whitelistSha, "whitelist.txt").lines(),
             geoip = fetchRaw(GEOIP_REPO, geoipSha, GEOIP_PATH).lines(),
         )
@@ -84,10 +88,13 @@ class BuildCommand : CoreCliktCommand(name = "ru-whitelist-rules") {
         out.createDirectories()
         (out / DOMAIN_TXT).writeLines(result.domains)
         (out / IPCIDR_TXT).writeLines(result.cidrs.map { it.toString() })
-        (out / "LICENSE-upstream").writeText(fetchRaw(WHITELIST_REPO, whitelistSha, "LICENSE"))
+        (out / "LICENSE-upstream").writeText(
+            "$WHITELIST_REPO\n\n${fetchRaw(WHITELIST_REPO, whitelistSha, "LICENSE")}\n" +
+                "$EXTRA_CIDR_REPO\n\n${fetchRaw(EXTRA_CIDR_REPO, extraCidrSha, "LICENSE")}",
+        )
 
         val mihomoVersion = mihomo?.let { convertRuleSets(it, out) }
-        val meta = composeMeta(result, whitelistSha, geoipSha, mihomoVersion)
+        val meta = composeMeta(result, whitelistSha, extraCidrSha, geoipSha, mihomoVersion)
         (out / "meta.json").writeText(meta)
         echo(meta)
 
@@ -151,7 +158,13 @@ private fun runCommand(vararg command: String): String {
     return output
 }
 
-private fun composeMeta(result: BuildResult, whitelistSha: String, geoipSha: String, mihomoVersion: String?): String {
+private fun composeMeta(
+    result: BuildResult,
+    whitelistSha: String,
+    extraCidrSha: String,
+    geoipSha: String,
+    mihomoVersion: String?,
+): String {
     val subnets = result.subnets
     return """
         |{
@@ -159,6 +172,7 @@ private fun composeMeta(result: BuildResult, whitelistSha: String, geoipSha: Str
         |  "mihomo": ${quoteJson(mihomoVersion ?: "not used")},
         |  "upstreams": {
         |    ${quoteJson(WHITELIST_REPO)}: ${quoteJson(whitelistSha)},
+        |    ${quoteJson(EXTRA_CIDR_REPO)}: ${quoteJson(extraCidrSha)},
         |    ${quoteJson(GEOIP_REPO)}: ${quoteJson(geoipSha)}
         |  },
         |  "domains": {
