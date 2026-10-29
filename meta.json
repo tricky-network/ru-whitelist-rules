@@ -1,0 +1,21 @@
+{
+  "builtAt": "2026-10-29T04:03:40.926263275Z",
+  "mihomo": "v1.19.33",
+  "upstreams": {
+    "hxehex/russia-mobile-internet-whitelist": "fad3653ebd4b212643774a4d10af3eb33838e4ff",
+    "escapingworm/russia-whitelist": "2bb6c0788f21986b7928d986ea2577c6ebc11b36",
+    "MetaCubeX/meta-rules-dat": "74246501fd12b938b73482f406a6163d1e4a460f"
+  },
+  "domains": {
+    "output": 910,
+    "invalid": 0
+  },
+  "ipcidr": {
+    "output": 4269,
+    "invalid": 0,
+    "full": 3616,
+    "trimmed": 396,
+    "dropped": 26285,
+    "topDropped": ["7.64.0.0/12", "7.80.0.0/13", "7.168.0.0/13", "7.176.0.0/13", "7.20.0.0/14", "7.48.0.0/14", "7.104.0.0/14", "7.120.0.0/14", "7.132.0.0/14", "7.164.0.0/14"]
+  }
+}
